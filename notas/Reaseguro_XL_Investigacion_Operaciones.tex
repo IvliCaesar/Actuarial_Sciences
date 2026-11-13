@@ -1,0 +1,349 @@
+\documentclass[11pt,reqno]{amsart}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-noquoting]{babel}
+\usepackage{lmodern,microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools,mathrsfs}
+\usepackage[a4paper,margin=2.65cm]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{fancyvrb}
+\usepackage{graphicx}
+\definecolor{resultblue}{RGB}{12,54,139}
+\definecolor{codegray}{RGB}{75,75,75}
+\lstdefinestyle{pyclean}{language=Python,basicstyle=\ttfamily\footnotesize,breaklines=true,breakatwhitespace=true,columns=fullflexible,keepspaces=true,showstringspaces=false,frame=single,framerule=.3pt,rulecolor=\color{black!30},numbers=left,numberstyle=\tiny\color{codegray},numbersep=8pt,keywordstyle=\color{resultblue},commentstyle=\color{codegray},stringstyle=\color{black},tabsize=4}
+\newtheorem{theorem}{Teorema}[section]
+\newtheorem{proposition}[theorem]{Proposición}
+\newtheorem{lemma}[theorem]{Lema}
+\newtheorem{corollary}[theorem]{Corolario}
+\theoremstyle{definition}\newtheorem{definition}[theorem]{Definición}
+\newtheorem{example}[theorem]{Ejemplo}
+\newtheorem{exercise}[theorem]{Problema}
+\theoremstyle{remark}\newtheorem{remark}[theorem]{Observación}
+\DeclareMathOperator{\VaR}{VaR}
+\DeclareMathOperator{\ES}{ES}
+\DeclareMathOperator{\CVaR}{CVaR}
+\DeclareMathOperator{\argmin}{arg\,min}
+\newcommand{\E}{\mathbb E}
+\newcommand{\Prob}{\mathbb P}
+\newcommand{\R}{\mathbb R}
+\newcommand{\pos}[1]{(#1)^+}
+\newcommand{\resultado}[1]{{\color{resultblue}\boldsymbol{#1}}}
+\title[Reaseguro de exceso de pérdida y optimización]{Optimización del reaseguro catastrófico de exceso de pérdida\\\large Un estudio actuarial inspirado en información pública del mercado mexicano}
+\author{Notas de investigación y docencia}
+\date{13 de noviembre de 2026}
+\begin{document}
+\begin{abstract}
+Se estudia el diseño óptimo de una cobertura de exceso de pérdida para una aseguradora expuesta a catástrofes naturales. El punto de partida es el mercado mexicano, documentado por las pérdidas aseguradas del huracán Otis, el reporte de solvencia de AXA Seguros correspondiente a 2025 y la regulación de la Comisión Nacional de Seguros y Fianzas. Se formula rigurosamente el contrato por ocurrencia, se distingue de las coberturas agregadas, se estudian su prima y sus restricciones de riesgo, y se resuelve un problema de optimización de dos variables bajo \emph{expected shortfall}. El ejemplo numérico es reproducible en Python; los únicos números de procedencia institucional se identifican con precisión y no se confunden con cotizaciones ni con cláusulas contractuales observadas. Finalmente se desarrolla un modelo compuesto de frecuencia--severidad, junto con las consideraciones de reinstalación, riesgo de contraparte, múltiples capas y validación estadística que exige un estudio empírico defendible.
+\end{abstract}
+\maketitle
+\tableofcontents
+
+\section{El problema actuarial y su evidencia empírica}
+En un seguro de daños catastróficos, la aleatoriedad de la siniestralidad no se reduce a una dispersión moderada alrededor de una media. Una parte sustancial del costo puede concentrarse en pocos eventos. Una aseguradora que conserva riesgos de inmuebles, infraestructura y establecimientos comerciales debe decidir, antes de observar el año próximo, qué proporción de su exposición extrema es capaz de financiar con sus recursos y qué parte conviene transferir. Esta decisión tiene dos costos: el precio de la transferencia y el riesgo residual que permanece en el balance.
+
+El huracán Otis muestra que el problema no es hipotético. La Asociación Mexicana de Instituciones de Seguros reportó, con corte al 18 de octubre de 2024, \emph{44\,653 siniestros} y daños asegurados estimados en \emph{39\,343 millones de pesos} para el conjunto del mercado. De ese importe, el comunicado identifica 14\,866 millones en comercios, restaurantes y giros relacionados, 10\,155 millones en vivienda y 7\,850 millones en hoteles y hospedaje \cite{AMISOtis2024}. Los importes corresponden al \emph{sector asegurador}, no a una sola entidad, y su fecha es posterior al evento del 25 de octubre de 2023.
+
+El \emph{Reporte sobre la Solvencia y Condición Financiera 2025} de AXA Seguros hace pública información de otra naturaleza: en su página numerada 43 aparece, para huracán y otros riesgos hidrometeorológicos, una PML de retención/RC de 3\,128 millones de pesos, una reserva de riesgos catastróficos de 2\,816 millones y coberturas XL efectivamente disponibles de 1\,248 millones; para terremoto, las cifras correspondientes son 2\,894, 2\,860 y 1\,248 millones. En su tabla I1, página numerada 117, consta un límite máximo de retención aprobado de 380 millones para terremoto e hidrometeorológicos \cite{AXA2025}. Los números se encuentran redondeados a millones de pesos.
+
+\emph{Estas magnitudes no son intercambiables.} La PML de retención es una medida de riesgo bajo las metodologías aplicables; no es una pérdida efectivamente observada. Las coberturas XL efectivamente disponibles son una partida considerada en el cálculo de solvencia, no necesariamente el límite nominal total de una capa contractual. El límite máximo de retención aprobado tampoco debe identificarse, sin evidencia adicional, con el deducible de un programa por ocurrencia. Ninguna de las fuentes consultadas revela la función completa de precios de un programa negociado por AXA. Por ello, la optimización que sigue constituye una \emph{calibración didáctica referenciada a información real}, no una reconstrucción del contrato de la compañía.
+
+El capítulo 6.4 de la Circular Única de Seguros y Fianzas (CUSF) establece el tratamiento del requerimiento de capital para riesgos basados en PML y de las coberturas de exceso de pérdida efectivamente disponibles. La disposición 6.4.6 contempla, bajo condiciones, coberturas comunes a terremoto e hidrometeorológicos y su reinstalación automática \cite{CUSF64}. No se afirma que una restricción simple de $\ES_{0.95}$ reproduzca el cálculo regulatorio mexicano.
+
+\section{El contrato de exceso de pérdida}
+Sea $(\Omega,\mathscr F,\Prob)$ un espacio de probabilidad y sea $X:\Omega\to[0,\infty)$ una pérdida \emph{por ocurrencia}. Suponemos $\E X<\infty$. Dadas una prioridad $d\ge0$ y una capacidad $m\ge0$, la prestación del reasegurador se define mediante
+\begin{equation}\label{eq:layer}
+R_{d,m}(X)=\min\{\pos{X-d},m\}=\pos{X-d}-\pos{X-d-m}.
+\end{equation}
+La pérdida neta del cedente es $N_{d,m}(X)=X-R_{d,m}(X)$. En términos de la realización $x$,
+\begin{equation}\label{eq:netpiece}
+N_{d,m}(x)=\begin{cases}
+x,&0\le x\le d,\\
+d,&d<x\le d+m,\\
+x-m,&x>d+m.
+\end{cases}
+\end{equation}
+En la primera región la cedente conserva toda la pérdida. En la segunda, el reasegurador absorbe el tramo entre la prioridad y el agotamiento del límite. Después del agotamiento, la pérdida vuelve a crecer a cargo de la cedente. Esto explica por qué contratar un límite finito no elimina las pérdidas extraordinariamente grandes.
+
+\begin{proposition}[Representación de la prima pura]\label{prop:layer}
+Para $X\ge0$ integrable, y $\overline F_X(t)=\Prob(X>t)$,
+\begin{equation}\label{eq:layerpremium}
+\E R_{d,m}(X)=\int_d^{d+m}\overline F_X(t)\,dt.
+\end{equation}
+Además, la indemnización $R_{d,m}(x)$ es no creciente en $d$, no decreciente en $m$ y satisface $0\le R_{d,m}(x)\le x$.
+\end{proposition}
+\begin{proof}
+La identidad puntual
+$\min\{\pos{x-d},m\}=\int_d^{d+m}\mathbf1_{\{x>t\}}\,dt$
+es válida para todo $x\ge0$. La integración respecto de $\Prob$ y el teorema de Tonelli proporcionan \eqref{eq:layerpremium}. Las restantes afirmaciones se leen directamente en \eqref{eq:layer}.
+\end{proof}
+
+\begin{example}[Tres regiones de una capa]
+Para una prioridad de $380$ millones y un límite de $1\,500$ millones, una pérdida de $200$ millones queda íntegramente a cargo de la cedente; una pérdida de $1\,000$ millones genera un pago del reasegurador de $620$ millones y una retención de $380$; una pérdida de $3\,000$ millones supera la capacidad y deja a cargo de la cedente $1\,500$ millones. La última retención incluye los primeros $380$ millones y los $1\,120$ millones que exceden el límite superior de la capa, $1\,880$ millones.
+\end{example}
+
+\subsection{Por ocurrencia y agregado anual no significan lo mismo}
+Si durante un año ocurren $K$ eventos con pérdidas $X_1,\ldots,X_K$, el contrato por ocurrencia, suponiendo una capacidad plenamente reinstalada para cada evento, produce
+\begin{equation}\label{eq:occ}
+R^{\mathrm{occ}}=\sum_{i=1}^K\min\{\pos{X_i-d},m\}.
+\end{equation}
+Un contrato de exceso de pérdida agregado anual puede definirse, en cambio, por
+\begin{equation}\label{eq:agg}
+R^{\mathrm{agg}}=\min\left\{\pos{\sum_{i=1}^K X_i-d},m\right\}.
+\end{equation}
+Las dos variables no son iguales. Con dos siniestros de $700$ millones, prioridad $380$ y límite $500$, \eqref{eq:occ} paga $320+320=640$ millones si la cobertura se restablece para cada ocurrencia; \eqref{eq:agg} paga solamente $500$. Reinstalación, límite anual agregado y número máximo de reinstalaciones deben constar en el contrato antes de aplicar cualquiera de las fórmulas a datos de un ejercicio completo.
+
+\section{Precios, capital y medidas de riesgo}
+Una tarifa elemental basada en el principio del valor esperado es
+\begin{equation}\label{eq:premium}
+\Pi(d,m)=(1+\theta)\E R_{d,m}(X)+\gamma m,
+\qquad \theta,\gamma>0.
+\end{equation}
+El primer término remunera la pérdida cedida con un margen de carga; el segundo introduce un precio adicional por la capacidad disponible. Se trata de una función \emph{postulada}: no es la tarifa de mercado ni el contrato de AXA. Una cotización efectiva puede depender de modelos de catástrofes, perfil geográfico, reinstalaciones, exclusiones, intermediación, colateral, concentración de reaseguradores y ciclo de mercado.
+
+El costo técnico esperado de la cedente se escribe
+\begin{equation}\label{eq:objective}
+J(d,m)=\E N_{d,m}(X)+\Pi(d,m)
+=\E X+\theta\E R_{d,m}(X)+\gamma m.
+\end{equation}
+\begin{proposition}[Insuficiencia del costo esperado]
+Si $\theta,\gamma>0$ y no se exige ninguna restricción de riesgo o capital, entonces $(d,m)=(d,0)$, para cualquier $d\ge0$, minimiza \eqref{eq:objective}. En efecto, $J(d,m)\ge\E X$, con igualdad cuando $m=0$.
+\end{proposition}
+\begin{proof}
+Tanto $\E R_{d,m}(X)$ como $m$ son no negativos. La fórmula \eqref{eq:objective} demuestra la desigualdad y la condición de igualdad.
+\end{proof}
+
+Para imponer un nivel explícito de seguridad, fijamos $\alpha\in(0,1)$ y definimos
+\begin{equation}
+\VaR_\alpha(Y)=\inf\{y\in\R:\Prob(Y\le y)\ge\alpha\}.
+\end{equation}
+La medida de cola utilizada aquí es el \emph{expected shortfall}, definido por
+\begin{equation}\label{eq:es}
+\ES_\alpha(Y)=\inf_{\eta\in\R}\left\{\eta+\frac{1}{1-\alpha}\E\pos{Y-\eta}\right\}.
+\end{equation}
+Para variables integrables, esta representación coincide con el promedio de los cuantiles superiores (con la correspondiente ponderación fraccionaria en presencia de átomos). Véase \cite{RockafellarUryasev2000}. La identidad es particularmente conveniente con escenarios discretos; evita errores cuando una probabilidad se concentra exactamente en el cuantil.
+
+\begin{proposition}[Formulación por escenarios]\label{prop:scenario}
+Sean $y_i$ pérdidas netas en $n$ escenarios con probabilidades $p_i>0$, $\sum_i p_i=1$. Entonces
+\begin{equation}\label{eq:esLP}
+\ES_\alpha(Y)=\min_{\eta,u_1,\ldots,u_n}
+\left\{\eta+\frac{1}{1-\alpha}\sum_{i=1}^n p_i u_i:
+\ u_i\ge y_i-\eta,\ u_i\ge0\right\}.
+\end{equation}
+\end{proposition}
+\begin{proof}
+Fijada $\eta$, la función objetivo es creciente en cada $u_i$. Por tanto, en el mínimo $u_i=\pos{y_i-\eta}$. Al sustituir recuperamos \eqref{eq:es}. La expresión es lineal en $(\eta,u)$ si los $y_i$ son datos fijos; cuando $y_i=N_{d,m}(x_i)$ y $d,m$ son variables, la estructura no es automáticamente un problema de programación lineal.
+\end{proof}
+
+El problema de decisión queda planteado como
+\begin{equation}\label{eq:opt}
+\begin{aligned}
+\inf_{d,m\ge0}\quad & J(d,m),\\
+\text{sujeto a}\quad&\ES_\alpha(N_{d,m}(X))\le B,\\
+&\Pi(d,m)\le P_{\max}\quad\text{(si existe presupuesto de prima)}.
+\end{aligned}
+\end{equation}
+El límite $B$ es un \emph{apetito de riesgo interno} hipotético. No lo equiparamos al requerimiento de capital regulatorio. Para una aplicación prudencial efectiva se debe construir, por separado, el cálculo que establece la normativa vigente \cite{CUSF64}.
+
+\section{Un ejemplo exactamente resoluble}
+\subsection{Escenarios y procedencia de los números}
+Tomamos cuatro pérdidas potenciales, en millones de pesos, con distribución
+\begin{equation}\label{eq:law}
+\begin{array}{c|rrrr}
+x_i&0&500&1500&3128\\\hline
+p_i&0.70&0.15&0.10&0.05
+\end{array}
+\end{equation}
+Los puntos $0$, $500$, $1\,500$ y las probabilidades \emph{son supuestos exclusivamente docentes}. El valor $3\,128$ toma únicamente la \emph{escala numérica} de la PML hidrometeorológica de retención publicada por AXA para 2025; no se interpreta como una observación individual ni como pérdida bruta reconstruida. La correspondencia de escala no hace que la distribución \eqref{eq:law} sea una estimación estadística de AXA.
+
+Fijamos $\theta=0.25$, $\gamma=0.01$, $\alpha=0.95$ y $B=380$, todos como parámetros \emph{hipotéticos}. El número $380$ se inspira en el límite de retención de la tabla I1 del reporte citado, pero aquí tiene otro significado matemático: cota de \emph{expected shortfall} de una distribución construida. Esta diferencia debe preservarse en cualquier interpretación.
+
+La pérdida media es
+\[
+\E X=0.70(0)+0.15(500)+0.10(1500)+0.05(3128)
+=\resultado{381.40}\ \text{millones}.
+\]
+
+\subsection{Restricción de cola y solución analítica}
+Puesto que $x\mapsto N_{d,m}(x)$ es no decreciente, la pérdida neta mayor está asociada al escenario $X=3128$. Como la probabilidad de ese escenario es exactamente $0.05$, la representación de expected shortfall proporciona
+\begin{equation}\label{eq:cvarmax}
+\ES_{0.95}(N_{d,m}(X))=N_{d,m}(3128).
+\end{equation}
+Esto incluye el caso de empates entre escenarios; cualquiera de las observaciones que forme la cola superior tiene entonces el mismo valor máximo.
+
+\begin{theorem}[Capa óptima bajo una restricción extrema]\label{thm:opt}
+Para la distribución \eqref{eq:law}, la prima \eqref{eq:premium} y los parámetros indicados, el problema
+\[
+\min_{d,m\ge0}J(d,m)\qquad\text{sujeto a}\qquad
+\ES_{0.95}(N_{d,m}(X))\le380
+\]
+tiene una única solución óptima relevante, a saber
+\begin{equation}\label{eq:answer}
+\boxed{\resultado{d^*=380,\qquad m^*=2748.}}
+\end{equation}
+Su costo esperado es $\resultado{J(d^*,m^*)=475.73}$ millones de pesos.
+\end{theorem}
+\begin{proof}
+Por \eqref{eq:cvarmax}, la restricción es equivalente a
+\[
+3128-\min\{\pos{3128-d},m\}\le380.
+\]
+Luego la recuperación del último escenario debe ser al menos $2748$, lo cual exige $d\le380$ y $m\ge2748$. El contrato $d=380$, $m=2748$ satisface la restricción con igualdad.
+
+Para cualquier solución factible $(d,m)$, el carácter monótono de la recuperación respecto de $d$ y de $m$ implica
+$R_{d,m}(x)\ge R_{380,2748}(x)$ para todo $x\ge0$. En efecto, $d\le380$ y $m\ge2748$. Por ello, $\E R_{d,m}(X)\ge\E R_{380,2748}(X)$, y asimismo $\gamma m\ge\gamma(2748)$. Como $\theta,\gamma>0$, la representación \eqref{eq:objective} demuestra la optimalidad. Para la unicidad, si $m>2748$ la penalización $\gamma m$ es estrictamente mayor. Si $m=2748$ y $d<380$, el escenario $X=500$, de probabilidad positiva, produce una recuperación estrictamente mayor que para $d=380$, y con ello un mayor costo esperado. La solución es única.
+\end{proof}
+
+Las recuperaciones para $(d^*,m^*)$ son $0,120,1120,2748$ millones y las pérdidas netas son $0,380,380,380$. Resulta
+\begin{align*}
+\E R&=.15(120)+.10(1120)+.05(2748)=\resultado{267.40},\\
+\E N&=381.40-267.40=\resultado{114.00},\\
+\Pi&=1.25(267.40)+.01(2748)=\resultado{361.73},\\
+J&=114.00+361.73=\resultado{475.73},\\
+\ES_{.95}(N)&=\resultado{380.00}.
+\end{align*}
+La diferencia $475.73-381.40=94.33$ millones es el sobrecosto esperado atribuible al margen de la transferencia y a su capacidad contratada. No se debe describir como \emph{beneficio financiero neto}: su justificación es reducir la cola de pérdidas, no minimizar de manera irrestricta el valor medio.
+
+\begin{remark}[Alcance de la conclusión]
+El resultado no constituye el programa óptimo real de AXA. El ejemplo tiene una sola pérdida agregada representada por una variable discreta, un solo contrato sin fricciones, una tarifa hipotética y una restricción de riesgo que no es la regla de capital de la CNSF. La fuerza del ejemplo reside en que su solución es demostrable, sus cuentas son reproducibles y sus límites empíricos quedan explícitos.
+\end{remark}
+
+\section{Una lectura de optimización más general}
+La fórmula \eqref{eq:layerpremium} permite estudiar una distribución continua sin enumerar todos los escenarios. Si $X$ admite una distribución continua con función de supervivencia $\overline F_X$, y los puntos $d$ y $d+m$ son puntos de continuidad, entonces
+\begin{equation}\label{eq:partials}
+\frac{\partial}{\partial d}\E R_{d,m}(X)=\overline F_X(d+m)-\overline F_X(d),\qquad
+\frac{\partial}{\partial m}\E R_{d,m}(X)=\overline F_X(d+m).
+\end{equation}
+Esta es una primera interpretación marginal del contrato. Aumentar la prioridad reduce la recuperación media en la probabilidad de que la pérdida caiga dentro de la capa; aumentar la capacidad agrega un pequeño tramo de protección cuyo costo puro depende de la probabilidad de superar el límite superior. En distribuciones con átomos se sustituyen estas derivadas por derivadas laterales.
+
+\begin{proposition}[Comparación de coberturas]\label{prop:order}
+Supóngase que $(d_1,m_1)$ y $(d_2,m_2)$ satisfacen $d_1\le d_2$ y $m_1\ge m_2$. Entonces para todo $x\ge0$,
+\[
+R_{d_1,m_1}(x)\ge R_{d_2,m_2}(x),\qquad
+N_{d_1,m_1}(x)\le N_{d_2,m_2}(x).
+\]
+En particular, $\ES_\alpha(N_{d_1,m_1}(X))\le\ES_\alpha(N_{d_2,m_2}(X))$ para todo $\alpha\in(0,1)$.
+\end{proposition}
+\begin{proof}
+La primera desigualdad se deduce directamente de \eqref{eq:layer}. La segunda resulta al restar las recuperaciones de $x$. La monotonicidad del expected shortfall, visible en \eqref{eq:es} o en su representación por cuantiles, completa la demostración.
+\end{proof}
+
+La monotonía no implica convexidad conjunta de $J(d,m)$ ni de la región factible definida por $\ES_\alpha(N_{d,m}(X))\le B$. En los escenarios discretos, $N_{d,m}(x_i)$ contiene mínimos y máximos de expresiones afines. Es una función lineal por tramos, pero la dependencia de ambos parámetros puede producir regiones no convexas. Por ello no sería correcto llamar \emph{programación lineal} al modelo completo sin introducir variables auxiliares y restricciones adecuadas, eventualmente binarias.
+
+\section{Optimización por escenarios y formulaciones computacionales}
+Sea una muestra de escenarios $x_1,\ldots,x_n$ con probabilidades $p_i$. Para $r_i=\min\{\pos{x_i-d},m\}$ y $y_i=x_i-r_i$, la función de costo es
+\begin{equation}
+J_n(d,m)=\sum_{i=1}^n p_i y_i+(1+\theta)\sum_{i=1}^n p_i r_i+\gamma m.
+\end{equation}
+La restricción de cola se representa con una variable $\eta$ y variables $u_i$ como en \eqref{eq:esLP}. Para la optimización por escenarios de un solo contrato hay al menos tres enfoques útiles:
+\begin{enumerate}[label=(\roman*)]
+\item Enumerar regiones de cambio en los puntos $d=x_i$ y $d+m=x_i$ cuando el número de escenarios es pequeño, y comparar los mínimos obtenidos.
+\item Utilizar un algoritmo global para funciones no suaves, acompañado de un certificado analítico o de cotas verificables cuando sea posible.
+\item Formular exactamente los regímenes de la capa con una representación disyuntiva y variables binarias, tras establecer cotas válidas para las variables (MILP/MINLP según los demás componentes).
+\end{enumerate}
+No debe confundirse el resultado de un algoritmo heurístico con una prueba de optimalidad global. El caso anterior es excepcionalmente útil en clase porque proporciona \emph{ambos}: una prueba matemática y una validación numérica independiente.
+
+\section{Código Python reproducible: programación orientada a objetos}
+El programa completo está integrado en las notas mediante un \texttt{listing} e incluido como archivo autónomo \texttt{optimizacion\_xl.py}. Se requieren Python 3, NumPy y SciPy; se instala lo necesario ejecutando \texttt{python -m pip install numpy scipy}. La clase \texttt{ScenarioModel} encapsula la distribución, la función de recuperación, la pérdida neta, la prima y el expected shortfall. El método \texttt{optimize} implementa una búsqueda numérica global con penalización. \emph{La solución certificada en estas notas sigue siendo la analítica del Teorema~\ref{thm:opt}.}
+
+\lstinputlisting[style=pyclean,caption={Implementación reproducible y validación del contrato de exceso de pérdida.},label={lst:xl}]{optimizacion_xl.py}
+
+\subsection{Salida reproducible y su interpretación}
+La ejecución \texttt{python optimizacion\_xl.py} produce
+\begin{Verbatim}[fontsize=\small]
+Gross expectation: 381.40
+Recovery by scenario: [0, 120, 1120, 2748]
+Net by scenario: [0, 380, 380, 380]
+Expected recovery: 267.40
+Premium: 361.73
+Expected retention: 114.00
+Expected total cost: 475.73
+ES 95%: 380.00
+Validation: PASS
+\end{Verbatim}
+El renglón \texttt{Validation: PASS} significa que las identidades numéricas esperadas se verificaron y que una rejilla finita de controles factibles fue examinada. La rejilla no pretende probar por sí sola la optimalidad global, que ya quedó demostrada en el teorema. La implementación de $\ES_\alpha$ ordena pérdidas decrecientemente y toma exactamente una masa de probabilidad $1-\alpha$; esto evita contar dos veces un escenario cuando el cuantil coincide con un átomo de la distribución.
+
+\section{Frecuencia y severidad: extensión estocástica}
+Una sola pérdida discreta puede servir para ilustrar una decisión, pero no basta para representar una cartera. En un modelo anual compuesto, la pérdida bruta es
+\begin{equation}\label{eq:compound}
+S=\sum_{i=1}^K X_i,
+\end{equation}
+donde $K$ es el número de catástrofes relevantes en un horizonte de un año y $X_i$ son sus severidades. Bajo la hipótesis auxiliar $K\sim\mathrm{Poisson}(\lambda)$ e independencia de las severidades, si $\mu=\E X_1$ y $\sigma^2=\operatorname{Var}(X_1)$ son finitos, se obtiene
+\begin{equation}
+\E S=\lambda\mu,\qquad \operatorname{Var}(S)=\lambda(\sigma^2+\mu^2).
+\end{equation}
+La demostración utiliza las esperanzas y varianzas condicionales respecto de $K$:
+$\E[S\mid K]=K\mu$ y $\operatorname{Var}(S\mid K)=K\sigma^2$.
+
+La hipótesis de Poisson homogéneo no está garantizada por los datos mexicanos. Las pérdidas pueden compartir determinantes climáticos, exposición urbana, inflación de reconstrucción y dependencia espacial. Además, la \emph{severidad individual} puede presentar colas pesadas, sin que ello justifique automáticamente seleccionar una Pareto para todos los siniestros. Deben compararse familias paramétricas y diagnósticos de valores extremos, examinar umbrales, estudiar tendencias y contrastar la estabilidad temporal.
+
+Para un contrato por ocurrencia plenamente reinstalable, la pérdida neta anual sería
+\begin{equation}
+S^{\mathrm{net}}_{d,m}=\sum_{i=1}^K N_{d,m}(X_i),
+\end{equation}
+mientras que para un contrato agregado anual sería
+\begin{equation}
+S^{\mathrm{net,agg}}_{d,m}=S-R_{d,m}(S).
+\end{equation}
+Una investigación empírica debe fijar desde el principio cuál de los dos objetos está modelando. La construcción de carteras multi-ramo exige separar pérdidas de huracanes, inundaciones y terremotos, controlar el solapamiento de exposiciones y determinar si hay límites compartidos. Un catálogo sintético de catástrofes, cuando esté disponible, puede aportar más información sobre la cola que una distribución de siniestros ordinarios ajustada sin estratificación.
+
+\section{Múltiples capas, reinstalaciones y contraparte}
+Consideremos $q$ capas con prioridades y capacidades $(d_j,m_j)$ y supongamos expresamente que no se superponen, mediante $d_{j+1}\ge d_j+m_j$. Entonces
+\[
+R^{\mathrm{total}}(x)=\sum_{j=1}^q R_{d_j,m_j}(x)
+\]
+no paga dos veces la misma región de pérdida. El costo total puede escribirse $\sum_j\Pi_j(d_j,m_j)$, pero las primas de capas distintas no tienen por qué ser aditivas en cotizaciones reales: la capacidad puede depender de contraparte, correlación de negocios y términos contractuales.
+
+Con eventos sucesivos y reinstalaciones limitadas, el pago final del reasegurador depende de la \emph{trayectoria} anual, no únicamente de $S$. En tal caso, el estado del sistema debe incluir la capacidad consumida y la capacidad restante de cada capa; esa formulación conduce naturalmente a programación estocástica multietapa o a programación dinámica aproximada. Asimismo, si una reaseguradora incumple, el pago contractual $R$ difiere del pago efectivo. Una variable aleatoria de recuperación realizada, condicionada a eventos de incumplimiento, permite construir restricciones conjuntas de riesgo catastrófico y de contraparte.
+
+El capítulo 6.4 de la CUSF distingue precisamente circunstancias de disponibilidad y reinstalación al tratar coberturas de terremoto e hidrometeorológicas. No cabe trasladar sin más un límite contractual nominal a una deducción por solvencia \cite{CUSF64}.
+
+\section{Diseño de un estudio empírico mexicano}
+La documentación pública permite definir un programa de trabajo verificable. Primero se extraerían los cuadros estadísticos de la CNSF, preservando fecha de corte, ramo, monto, unidad, cobertura y diccionario de variables; sus bases de terremoto y erupción volcánica contienen información reportada al sistema estadístico del seguro, clasificada por entidad y giro \cite{CNSFTerremoto,CNSFDatos}. Segundo, se distinguirían las cifras del mercado de aquellas de una aseguradora particular. Tercero, se reconciliarían los conceptos de indemnización bruta, siniestro retenido, prima cedida y reservas, sin pretender obtener cotizaciones de reaseguro a partir de agregados que no contienen el precio de una capa.
+
+La muestra no se debe tratar como observaciones independientes e idénticamente distribuidas sin analizar la evolución de sumas aseguradas, la concentración geográfica y los cambios en cobertura. Las pérdidas nominales deben expresarse en una base económica comparable; el índice de actualización escogido requiere justificación. Se propone estimar frecuencia y severidad bajo varias especificaciones, calibrar las medidas de cola, efectuar simulaciones fuera de muestra y construir bandas de incertidumbre para $d^*$ y $m^*$.
+
+Una comparación entre una prima basada en valor esperado y primas calibradas a cotizaciones reales (si se consiguen) constituiría una contribución aplicada importante. La originalidad metodológica exigiría además superar alguna limitación de la formulación conocida, por ejemplo mediante cotas globales para programas de varias capas, restricciones robustas bajo ambigüedad de distribución o una formulación multietapa verificable de reinstalaciones. Sería inapropiado presentar el ejemplo discreto como un teorema nuevo de investigación; su propósito es proporcionar una base matemática que no oculte las hipótesis.
+
+\section{Problemas propuestos}
+\begin{exercise}
+Para $X$ con distribución \eqref{eq:law}, calcule la recuperación y la retención para $(d,m)=(500,1500)$ y explique la pérdida que queda por encima de la capa.
+\end{exercise}
+\begin{exercise}
+Demuestre directamente, sin utilizar Tonelli, la fórmula \eqref{eq:layerpremium} cuando $X$ tiene soporte finito. Relacione los sumandos con los intervalos de supervivencia.
+\end{exercise}
+\begin{exercise}
+Repita la optimización para presupuestos de riesgo $B\in\{250,380,600\}$ y determine, con demostración, si las fórmulas del Teorema~\ref{thm:opt} continúan siendo válidas.
+\end{exercise}
+\begin{exercise}
+Añada una restricción de presupuesto de prima $\Pi(d,m)\le350$ millones. Determine si el modelo original sigue siendo factible y justifique la respuesta sin depender exclusivamente de un algoritmo.
+\end{exercise}
+\begin{exercise}
+Construya una distribución de dos eventos por año y compare las recuperaciones por ocurrencia y agregadas; introduzca una única reinstalación y describa su costo.
+\end{exercise}
+\begin{exercise}
+Sustituya el expected shortfall al 95\% por expected shortfall al 99.5\%. Explique por qué una distribución discreta cuyos escenarios superiores suman una probabilidad de 5\% no proporciona resolución suficiente para calibrar rigurosamente la cola de 0.5\% de un mercado real.
+\end{exercise}
+\begin{exercise}
+Estime una frecuencia Poisson y dos modelos alternativos de severidad sobre datos reales, cuando se disponga de una base con unidad estadística identificable. Distinga validación del ajuste central y validación de la cola.
+\end{exercise}
+
+\section{Conclusión}
+El reaseguro catastrófico plantea un problema natural de investigación de operaciones porque la decisión de contratación precede a la realización de la incertidumbre y enfrenta costos de protección con pérdidas de gran magnitud. La estructura del contrato de exceso de pérdida permite explicitar qué paga cada parte y por qué una mayor capacidad contractual no garantiza que la cedente quede protegida frente a toda pérdida. El criterio de costo esperado, considerado aisladamente, favorece la ausencia de cobertura cuando esta se tarifica con recargos positivos; al incorporar una restricción de cola emerge una elección significativa del deducible y del límite.
+
+La información del mercado mexicano confirma la relevancia económica del problema, pero no identifica por sí misma una distribución de pérdidas ni una función de cotización de reaseguro. El ejemplo aquí resuelto hace visible esa separación: la evidencia pública motiva y fija referencias de escala, mientras que las hipótesis probabilísticas y de precio se indican y examinan. El paso de estas notas a un estudio empírico exige contratos comparables o cotizaciones, una base de exposición y siniestralidad suficientemente granular, y una validación cuidadosa de la cola de pérdidas.
+
+\begin{thebibliography}{99}
+\bibitem{AMISOtis2024} Asociación Mexicana de Instituciones de Seguros, \emph{A un año de Otis, se han registrado daños asegurados por 39,343 mdp}, comunicado de prensa, 23 de octubre de 2024. \url{https://www.amisprensa.org/nota/a-un-ano-de-otis-se-han-registrado-danos-asegurados-por-39343-mdp}.
+\bibitem{AXA2025} AXA Seguros, S.A. de C.V., \emph{Reporte sobre la Solvencia y Condición Financiera 2025}, páginas numeradas 43 y 117, disponible en \url{https://axa.mx/documents/51602/110987/2025_AXA%20Seguros%20Reporte%20sobre%20la%20Solvencia%20y%20Condici%C3%B3n%20Financiera/d7185d65-59c4-e032-7e11-2aae3063f2c1}.
+\bibitem{CUSF64} Comisión Nacional de Seguros y Fianzas, \emph{Circular Única de Seguros y Fianzas}, capítulo 6.4, \emph{Del requerimiento de capital para riesgos basados en la pérdida máxima probable}. \url{https://lisfcusf.cnsf.gob.mx/CUSF/CUSF6_4}.
+\bibitem{CNSFTerremoto} Comisión Nacional de Seguros y Fianzas, \emph{Información estadística de terremoto y erupción volcánica}, portal de estadísticas sectoriales. \url{https://www.cnsf.gob.mx/EntidadesSupervisadas/InstitucionesSociedadesMutualistas/Paginas/Terremoto.aspx}.
+\bibitem{CNSFDatos} Comisión Nacional de Seguros y Fianzas, \emph{Información estadística de terremoto y erupción volcánica (sector asegurador)}, datos.gob.mx. \url{https://www.datos.gob.mx/dataset/informacion_estadistica_terremoto_erupcion_volcanica_sector_asegurador}.
+\bibitem{RockafellarUryasev2000} R. T. Rockafellar and S. Uryasev, \emph{Optimization of conditional value-at-risk}, Journal of Risk \textbf{2} (2000), no. 3, 21--41. \url{https://doi.org/10.21314/JOR.2000.038}.
+\bibitem{Kaas2008} R. Kaas, M. Goovaerts, J. Dhaene and M. Denuit, \emph{Modern Actuarial Risk Theory: Using R}, second ed., Springer, 2008.
+\bibitem{Embrechts1997} P. Embrechts, C. Kl\"uppelberg and T. Mikosch, \emph{Modelling Extremal Events for Insurance and Finance}, Springer, 1997.
+\end{thebibliography}
+\end{document}

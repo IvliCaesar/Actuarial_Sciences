@@ -1,0 +1,168 @@
+{
+  "reaseguro": {
+    "n_siniestros": 2167,
+    "años": "1980–1990",
+    "lambda_media": 197.0,
+    "lambda_1991": 246.11821140261787,
+    "crecimiento_anual": 0.039067277816236645,
+    "sobredispersion_pearson": 1.9949963405076379,
+    "pareto_alpha": 1.2707286340264616,
+    "gpd_u": 10.0,
+    "gpd_xi": 0.49697630118112623,
+    "gpd_xi_ic95": [
+      0.18323540413658518,
+      0.7503592414870052
+    ],
+    "gpd_beta": 6.9754506314014675,
+    "excesos_sobre_u": 109,
+    "E_S_bruta": 830.4059058523941,
+    "ES_0.99_bruta": 1793.7462678871616,
+    "B": 1345.3097009153712,
+    "d_opt": 85.0,
+    "m_opt": 600.0,
+    "J_opt": 842.3141098076806,
+    "prima_opt": 35.54101977643212,
+    "ER_opt": 23.632815821145698,
+    "ES_0.99_neta_opt": 1344.8947190366366,
+    "theta": 0.25,
+    "gamma": 0.01,
+    "alpha": 0.99,
+    "años_simulados": 50000
+  },
+  "supervivencia": {
+    "n_siniestros": 58056,
+    "liquidados": 54082,
+    "censurados": 3974,
+    "reabiertos_tras_liquidar": 1169,
+    "n_entrenamiento": 34833,
+    "n_validación": 8708,
+    "n_prueba": 14515,
+    "épocas_mejor_validación": 1821
+  },
+  "reserva_descontada": {
+    "a": 2,
+    "tasa": 0.03,
+    "siniestros_abiertos": 4268,
+    "reserva_casos": 289259844.87,
+    "reserva_descontada": 264898224.6503139,
+    "factor_descuento_medio_ponderado": 0.9157794603995768,
+    "años_esperados_a_liquidar_medio": 2.183785954462039,
+    "masa_no_liquidada_en_K": 0.0002829793929665413
+  },
+  "metricas_supervivencia": [
+    {
+      "modelo": "Kaplan–Meier",
+      "NLL prueba (por siniestro)": 1.4814904344118394,
+      "Brier IPCW medio": 0.1228508390088695
+    },
+    {
+      "modelo": "Logística (GLM)",
+      "NLL prueba (por siniestro)": 1.2875783583967866,
+      "Brier IPCW medio": 0.1042587816575272
+    },
+    {
+      "modelo": "Red neuronal",
+      "NLL prueba (por siniestro)": 1.2270180058366509,
+      "Brier IPCW medio": 0.09879066865397325
+    }
+  ],
+  "brier_ipcw": [
+    {
+      "modelo": "Kaplan–Meier",
+      "horizonte": 1,
+      "brier": 0.20425666638587964
+    },
+    {
+      "modelo": "Kaplan–Meier",
+      "horizonte": 2,
+      "brier": 0.2177540961326154
+    },
+    {
+      "modelo": "Kaplan–Meier",
+      "horizonte": 3,
+      "brier": 0.14064940729621797
+    },
+    {
+      "modelo": "Kaplan–Meier",
+      "horizonte": 5,
+      "brier": 0.04334660565806761
+    },
+    {
+      "modelo": "Kaplan–Meier",
+      "horizonte": 8,
+      "brier": 0.00824741957156693
+    },
+    {
+      "modelo": "Logística (GLM)",
+      "horizonte": 1,
+      "brier": 0.14918327573518622
+    },
+    {
+      "modelo": "Logística (GLM)",
+      "horizonte": 2,
+      "brier": 0.19395692965824965
+    },
+    {
+      "modelo": "Logística (GLM)",
+      "horizonte": 3,
+      "brier": 0.12869854920369156
+    },
+    {
+      "modelo": "Logística (GLM)",
+      "horizonte": 5,
+      "brier": 0.041434835005850046
+    },
+    {
+      "modelo": "Logística (GLM)",
+      "horizonte": 8,
+      "brier": 0.008020318684658547
+    },
+    {
+      "modelo": "Red neuronal",
+      "horizonte": 1,
+      "brier": 0.13658701843603213
+    },
+    {
+      "modelo": "Red neuronal",
+      "horizonte": 2,
+      "brier": 0.1840133029822182
+    },
+    {
+      "modelo": "Red neuronal",
+      "horizonte": 3,
+      "brier": 0.12435836535455416
+    },
+    {
+      "modelo": "Red neuronal",
+      "horizonte": 5,
+      "brier": 0.04109112747177192
+    },
+    {
+      "modelo": "Red neuronal",
+      "horizonte": 8,
+      "brier": 0.007903529025289782
+    }
+  ],
+  "validacion_prima_capa": [
+    {
+      "capa": "15 xs 5",
+      "empírica (media de R)": 0.6536448121827411,
+      "∫ S(t) dt, modelo empalmado": 0.6475190622328773
+    },
+    {
+      "capa": "40 xs 10",
+      "empírica (media de R)": 0.5053914706968159,
+      "∫ S(t) dt, modelo empalmado": 0.5192808634634787
+    },
+    {
+      "capa": "80 xs 20",
+      "empírica (media de R)": 0.28920912321181363,
+      "∫ S(t) dt, modelo empalmado": 0.31281958776312035
+    },
+    {
+      "capa": "150 xs 50",
+      "empírica (media de R)": 0.17373321827411167,
+      "∫ S(t) dt, modelo empalmado": 0.1317860564186858
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+Gross expectation: 381.40
+Recovery by scenario: [0, 120, 1120, 2748]
+Net by scenario: [0, 380, 380, 380]
+Expected recovery: 267.40
+Premium: 361.73
+Expected retention: 114.00
+Expected total cost: 475.73
+ES 95%: 380.00
+Validation: PASS

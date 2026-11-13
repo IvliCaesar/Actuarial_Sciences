@@ -1,0 +1,8 @@
+data/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+notas/*.aux
+notas/*.log
+notas/*.out
+notas/*.toc
