@@ -13,17 +13,26 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import charts, data, mexico, reinsurance, survival
+from . import charts, data, mexico, problemas, reinsurance, survival
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def notes_example() -> str:
-    """Corre ``notas/optimizacion_xl.py`` y devuelve su salida textual."""
+def _run_script(name: str) -> str:
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
-        runpy.run_path(str(ROOT / "notas" / "optimizacion_xl.py"), run_name="__main__")
+        runpy.run_path(str(ROOT / "notas" / name), run_name="__main__")
     return buf.getvalue()
+
+
+def notes_example() -> str:
+    """Corre ``notas/optimizacion_xl.py`` y devuelve su salida textual."""
+    return _run_script("optimizacion_xl.py")
+
+
+def problem_solutions() -> str:
+    """Corre ``notas/soluciones_problemas.py`` (Problemas 1-6)."""
+    return _run_script("soluciones_problemas.py")
 
 
 def _jsonable(obj):
@@ -48,6 +57,10 @@ def run_all(save: bool = True, n_years: int = 50_000) -> dict:
     mx["sensibilidad"] = mexico.sensitivity()
     out["mexico"] = mx
 
+    out["soluciones"] = problem_solutions()
+    pb = problemas.run()
+    out["problemas"] = pb
+
     fire = data.load_fire_claims()
     sv = survival.run(fire)
     out["supervivencia"] = sv
@@ -70,6 +83,8 @@ def run_all(save: bool = True, n_years: int = 50_000) -> dict:
         "15_mx_reaseguro_cnsf": charts.mx_insured_vs_ceded(mx["cnsf_huracan"]),
         "16_mx_brecha": charts.mx_protection_gap(mx["gap"]),
         "17_mx_entidades": charts.mx_states(mx["cnsf_entidad"]),
+        "18_qq_dinamarca": charts.qq_plot(pb["dinamarca"]["qq"], "QQ log-log: incendios daneses", "mDKK"),
+        "19_qq_mexico": charts.qq_plot(pb["mexico"]["qq"], "QQ log-log: ciclones tropicales en México", "mdp 2024"),
         "07_supervivencia_ajuste": charts.survival_fit(sv["curves"]),
         "08_supervivencia_perfiles": charts.survival_profiles(sv["profiles"]),
         "09_calibracion": charts.hazard_calibration(sv["calibration"]),
@@ -83,12 +98,18 @@ def run_all(save: bool = True, n_years: int = 50_000) -> dict:
         res = ROOT / "results"
         res.mkdir(exist_ok=True)
         (res / "notas_salida.txt").write_text(out["notas"], encoding="utf-8")
+        (res / "soluciones_salida.txt").write_text(out["soluciones"], encoding="utf-8")
         summary = {"reaseguro": re["summary"], "mexico": mx["summary"],
                    "mexico_sensibilidad": mx["sensibilidad"].to_dict(orient="records"), "supervivencia": sv["summary"],
                    "reserva_descontada": sv["reserve"],
                    "metricas_supervivencia": sv["metrics"].to_dict(orient="records"),
                    "brier_ipcw": sv["brier"].to_dict(orient="records"),
-                   "validacion_prima_capa": re["layer_check"].to_dict(orient="records")}
+                   "validacion_prima_capa": re["layer_check"].to_dict(orient="records"),
+                   "problema7": {k: {"frecuencia": v["frecuencia"], "xi": v["xi"], "xi_entrenamiento": v["xi_train"],
+                                     "central": v["central"].to_dict(orient="records"),
+                                     "backtest": v["backtest"].to_dict(orient="records"),
+                                     "exceso_medio": v["exceso_medio"].to_dict(orient="records")}
+                                 for k, v in pb.items()}}
         (res / "resumen.json").write_text(json.dumps(_jsonable(summary), indent=2, ensure_ascii=False),
                                           encoding="utf-8")
     return out

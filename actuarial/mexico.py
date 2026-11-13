@@ -51,12 +51,18 @@ def _plain(s: str) -> str:
 # ---------------------------------------------------------------------------
 # Construcción de extractos
 # ---------------------------------------------------------------------------
-def _download() -> dict:
+def _download(force: bool = True) -> dict:
+    """Descarga las fuentes a ``data/raw_mx``; con ``force=False`` usa los archivos ya presentes
+    (por ejemplo, descargados a mano desde el navegador)."""
     RAW.mkdir(parents=True, exist_ok=True)
     manifest = {}
     for name, url in SOURCES.items():
         path = RAW / name
-        urllib.request.urlretrieve(url, path)
+        if force or not path.exists():
+            print(f"  descargando {name} ...", flush=True)
+            urllib.request.urlretrieve(url, path)
+        else:
+            print(f"  usando el archivo local {path}", flush=True)
         manifest[name] = {"url": url, "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
                           "bytes": path.stat().st_size, "descargado": date.today().isoformat()}
     return manifest
@@ -118,9 +124,9 @@ def _cnsf() -> tuple[pd.DataFrame, pd.DataFrame]:
     return by_year, by_state
 
 
-def build() -> dict:
+def build(force: bool = True) -> dict:
     """Descarga las fuentes oficiales y regenera ``datos_mx/``."""
-    manifest = _download()
+    manifest = _download(force)
     defl = _deflator()
     OUT.mkdir(exist_ok=True)
     ev = _cenapred(defl)
@@ -138,7 +144,7 @@ def build() -> dict:
 # ---------------------------------------------------------------------------
 def load() -> dict:
     if not (OUT / "cenapred_eventos_ciclon_sismo.csv").exists():
-        build()
+        build(force=False)
     return {
         "eventos": pd.read_csv(OUT / "cenapred_eventos_ciclon_sismo.csv", parse_dates=["inicio"]),
         "cnsf_anio": pd.read_csv(OUT / "cnsf_siniestros_por_anio.csv"),

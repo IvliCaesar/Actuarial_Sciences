@@ -254,6 +254,20 @@ def mx_states(df: pd.DataFrame) -> alt.Chart:
         "Entidades con mayor siniestralidad asegurada por huracán", subtitle="CNSF, acumulado 2015–2025 · entidad según el registro estadístico de la póliza"))
 
 
+def qq_plot(df: pd.DataFrame, title: str, unit: str) -> alt.Chart:
+    dom = list(dict.fromkeys(df["modelo"]))
+    lo, hi = float(df["empirico"].min()), float(df[["empirico", "teorico"]].max().max())
+    diag = alt.Chart(pd.DataFrame({"a": [lo, hi]})).mark_line(color=MUTED, strokeDash=[4, 4]).encode(
+        x=alt.X("a:Q", scale=alt.Scale(type="log")), y=alt.Y("a:Q", scale=alt.Scale(type="log")))
+    pts = alt.Chart(df).mark_circle(size=22, opacity=.7).encode(
+        x=alt.X("teorico:Q", scale=alt.Scale(type="log"), title=f"Cuantil del modelo ({unit}, log)"),
+        y=alt.Y("empirico:Q", scale=alt.Scale(type="log"), title=f"Cuantil empírico ({unit}, log)"),
+        color=alt.Color("modelo:N", scale=_color(dom), title=None),
+        tooltip=["modelo:N", alt.Tooltip("teorico:Q", format=",.2f"), alt.Tooltip("empirico:Q", format=",.2f")])
+    return (diag + pts).properties(width=H + 60, height=H + 60, title=alt.Title(
+        title, subtitle="Sobre la diagonal: el modelo subestima esa parte de la distribución"))
+
+
 # --------------------------------------------------------------------------
 # Supervivencia
 # --------------------------------------------------------------------------

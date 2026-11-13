@@ -7,6 +7,8 @@ módulo reproducible de Python que lleva sus métodos a **datos reales**: incend
 | | |
 |---|---|
 | Notas (PDF) | [`notas/Reaseguro_XL_Investigacion_Operaciones.pdf`](notas/Reaseguro_XL_Investigacion_Operaciones.pdf) |
+| **Soluciones de los problemas (PDF)** | [`notas/Soluciones_Problemas.pdf`](notas/Soluciones_Problemas.pdf): los 7 problemas propuestos, resueltos a detalle |
+| **Guía para bajar los datos** | [`DATOS.md`](DATOS.md): camino automático y manual, huellas SHA-256, diccionario y problemas frecuentes |
 | Notebook de resultados | [`notebooks/Resultados.ipynb`](notebooks/Resultados.ipynb) (sólo muestra; no calcula) |
 | Módulo | [`actuarial/`](actuarial) (datos, reaseguro, México, supervivencia, gráficas, pipeline) |
 | Datos mexicanos derivados | [`datos_mx/`](datos_mx) (extractos + `manifest.json` con URL y SHA-256 de cada fuente oficial) |
@@ -15,8 +17,11 @@ módulo reproducible de Python que lleva sus métodos a **datos reales**: incend
 
 ```bash
 pip install -r requirements.txt
-python -m actuarial                  # todo el estudio: results/ y figures/  (~8 min en CPU)
+python -m actuarial.descargar        # baja y verifica todos los datos (ver DATOS.md)
 python notas/optimizacion_xl.py      # ejemplo exacto de las notas (salida idéntica a la del .tex)
+python notas/soluciones_problemas.py # verificación de los Problemas 1-6
+python -m actuarial.problemas        # Problema 7 con datos reales
+python -m actuarial                  # todo el estudio: results/ y figures/  (~8 min en CPU)
 jupyter lab notebooks/Resultados.ipynb
 ```
 
@@ -31,8 +36,11 @@ descargarlos de CENAPRED, CNSF y FRED y regenera `datos_mx/`. El análisis sólo
 
 ```
 notas/      Reaseguro_XL_Investigacion_Operaciones.tex/.pdf  +  optimizacion_xl.py (incluido por \lstinputlisting)
+            Soluciones_Problemas.tex/.pdf  +  soluciones_problemas.py (verificación de los Problemas 1-6)
 actuarial/  data.py          descarga verificada; construye tiempos de liquidación y censura
             mexico.py        CENAPRED + CNSF + INPC: eventos, deflactor, cola GPD truncada, capa XL, brecha de protección
+            problemas.py     Problema 7: dispersión, lognormal contra GPD, KS bootstrap, backtest de cola fuera de muestra
+            descargar.py     python -m actuarial.descargar [--cas | --mx | --local]
             reinsurance.py   Poisson con tendencia, Pareto/lognormal/GPD, prima por capa, simulación y optimización (d, m)
             survival.py      red neuronal en tiempo discreto con censura, GLM, Kaplan–Meier, Brier IPCW, reserva descontada
             charts.py        tema Altair; renderer Vega-Lite + PNG (interactivo en Jupyter, visible en GitHub)
@@ -112,6 +120,18 @@ Reserva de casos de los 4 268 expedientes de prueba abiertos al cierre del año 
 <img src="figures/08_supervivencia_perfiles.png" width="49%"> <img src="figures/10_brier_ipcw.png" width="49%">
 <img src="figures/09_calibracion.png" width="49%"> <img src="figures/07_supervivencia_ajuste.png" width="49%">
 </p>
+
+## 5. Problemas propuestos: resumen de soluciones
+
+| # | Resultado |
+|---|---|
+| 1 | Capa (500, 1500): E R = 175, J = 440.15, pero ES₀.₉₅(N) = 1 628: agotamiento vertical (1 128 sobre d + m) |
+| 2 | Prueba sin Tonelli por linealidad de una suma finita; E R = Σ P(X > aⱼ)·\|Iⱼ ∩ [d, d+m]\| (36 + 150 + 81.4 = 267.4) |
+| 3 | Para todo B < 3128: d\* = B, m\* = 3128 − B (única). J = 486.78, 475.73 y 460.78 para B = 250, 380 y 600; precio sombra −0.085 / −0.0475 / −0.0225 |
+| 4 | Con Π ≤ 350 el problema es **infactible** (prima mínima 361.73); lo mejor alcanzable es ES₀.₉₅(N) ≤ 410.47 |
+| 5 | Dos eventos/año: agregado 538.68 > ocurrencia 534.80 en media, pero en cola gana la ocurrencia (ES 760 contra 986.4); prima de reinstalación esperada 59.28 y ES con prima incluida 1 114.67 |
+| 6 | ES₀.₉₉₅ = ES₀.₉₅ = 3128: el modelo es ciego sobre el 95%. Un refinamiento con la misma media lleva ES₀.₉₉₅ a 4 280 y rompe la restricción al 95% (495.2) |
+| 7 | Poisson rechazada en Dinamarca y México. Lognormal rechazada en la cola danesa (35 contra 6.6 excedencias al 99%); GPD no rechazada. En México la prueba no tiene potencia (ξ de entrenamiento = 1.04) |
 
 ## Alcance y advertencias
 

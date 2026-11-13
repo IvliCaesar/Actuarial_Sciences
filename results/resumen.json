@@ -266,5 +266,217 @@
       "empírica (media de R)": 0.17373321827411167,
       "∫ S(t) dt, modelo empalmado": 0.1317860564186858
     }
-  ]
+  ],
+  "problema7": {
+    "dinamarca": {
+      "frecuencia": {
+        "años": 11,
+        "media": 197.0,
+        "varianza": 971.4,
+        "var/media": 4.930964467005076,
+        "D": 49.30964467005076,
+        "gl": 10,
+        "p_valor_Poisson": 3.574089945405848e-07,
+        "r_binomial_negativa": 50.11492768595041,
+        "logver_Poisson": -63.97537519448565,
+        "logver_BN": -52.952656628005876,
+        "AIC_Poisson": 129.9507503889713,
+        "AIC_BN": 109.90531325601175
+      },
+      "xi": 0.49203182953602714,
+      "xi_entrenamiento": 0.3994531488238848,
+      "central": [
+        {
+          "modelo": "Lognormal",
+          "KS": 0.13745302938776743,
+          "p (bootstrap)": 0.0,
+          "Q50 modelo": 2.1966864806718815,
+          "Q75 modelo": 3.5621714209248276,
+          "Q50 empírico": 1.778154,
+          "Q75 empírico": 2.9670235
+        },
+        {
+          "modelo": "Empírica + GPD",
+          "KS": 0.005076142131979711,
+          "p (bootstrap)": NaN,
+          "Q50 modelo": 1.7780643053935863,
+          "Q75 modelo": 2.966763433309038,
+          "Q50 empírico": 1.778154,
+          "Q75 empírico": 2.9670235
+        }
+      ],
+      "backtest": [
+        {
+          "modelo": "Lognormal",
+          "nivel": 0.9,
+          "cuantil ajustado": 5.283870903516786,
+          "excedencias": 81,
+          "esperadas": 66.29999999999998,
+          "p_binomial": 0.06035082348775338
+        },
+        {
+          "modelo": "Lognormal",
+          "nivel": 0.95,
+          "cuantil ajustado": 6.782723641292593,
+          "excedencias": 55,
+          "esperadas": 33.15000000000003,
+          "p_binomial": 0.0003263662807520231
+        },
+        {
+          "modelo": "Lognormal",
+          "nivel": 0.99,
+          "cuantil ajustado": 10.835323827487631,
+          "excedencias": 35,
+          "esperadas": 6.630000000000006,
+          "p_binomial": 4.8370193604959016e-15
+        },
+        {
+          "modelo": "Empírica + GPD",
+          "nivel": 0.9,
+          "cuantil ajustado": 5.401785430252101,
+          "excedencias": 79,
+          "esperadas": 66.29999999999998,
+          "p_binomial": 0.1052806241819848
+        },
+        {
+          "modelo": "Empírica + GPD",
+          "nivel": 0.95,
+          "cuantil ajustado": 8.846650305264685,
+          "excedencias": 44,
+          "esperadas": 33.15000000000003,
+          "p_binomial": 0.0605790910653752
+        },
+        {
+          "modelo": "Empírica + GPD",
+          "nivel": 0.99,
+          "cuantil ajustado": 25.28519742076049,
+          "excedencias": 11,
+          "esperadas": 6.630000000000006,
+          "p_binomial": 0.11175131669508885
+        }
+      ],
+      "exceso_medio": [
+        {
+          "modelo": "Lognormal",
+          "u": 8.769774899999994,
+          "exceso medio del modelo": 2.8964564553441736
+        },
+        {
+          "modelo": "Empírica + GPD",
+          "u": 8.769774899999994,
+          "exceso medio del modelo": 12.071189362124237
+        },
+        {
+          "modelo": "Observado (prueba)",
+          "u": 8.769774899999994,
+          "exceso medio del modelo": 15.68204230454546
+        }
+      ]
+    },
+    "mexico": {
+      "frecuencia": {
+        "años": 25,
+        "media": 6.04,
+        "varianza": 18.540000000000003,
+        "var/media": 3.06953642384106,
+        "D": 73.66887417218544,
+        "gl": 24,
+        "p_valor_Poisson": 6.001470084121648e-07,
+        "r_binomial_negativa": 2.9185279999999993,
+        "logver_Poisson": -77.76865975172521,
+        "logver_BN": -68.27491184909402,
+        "AIC_Poisson": 157.53731950345042,
+        "AIC_BN": 140.54982369818805
+      },
+      "xi": 0.9587316467937979,
+      "xi_entrenamiento": 1.0347947363276147,
+      "central": [
+        {
+          "modelo": "Lognormal",
+          "KS": 0.10903318283399294,
+          "p (bootstrap)": 0.005,
+          "Q50 modelo": 249.13171257237983,
+          "Q75 modelo": 2027.9539183377183,
+          "Q50 empírico": 502.7093127627009,
+          "Q75 empírico": 2445.310222342784
+        },
+        {
+          "modelo": "Empírica + GPD",
+          "KS": 0.027653241868178968,
+          "p (bootstrap)": NaN,
+          "Q50 modelo": 491.91912553667646,
+          "Q75 modelo": 2387.755070818125,
+          "Q50 empírico": 502.7093127627009,
+          "Q75 empírico": 2445.310222342784
+        }
+      ],
+      "backtest": [
+        {
+          "modelo": "Lognormal",
+          "nivel": 0.9,
+          "cuantil ajustado": 13853.813822809425,
+          "excedencias": 2,
+          "esperadas": 5.399999999999999,
+          "p_binomial": 0.16959766006985547
+        },
+        {
+          "modelo": "Lognormal",
+          "nivel": 0.95,
+          "cuantil ajustado": 40706.605882260585,
+          "excedencias": 1,
+          "esperadas": 2.7000000000000024,
+          "p_binomial": 0.5249287381769947
+        },
+        {
+          "modelo": "Lognormal",
+          "nivel": 0.99,
+          "cuantil ajustado": 307421.5355322137,
+          "excedencias": 0,
+          "esperadas": 0.5400000000000005,
+          "p_binomial": 1.0
+        },
+        {
+          "modelo": "Empírica + GPD",
+          "nivel": 0.9,
+          "cuantil ajustado": 8172.485458696492,
+          "excedencias": 2,
+          "esperadas": 5.399999999999999,
+          "p_binomial": 0.16959766006985547
+        },
+        {
+          "modelo": "Empírica + GPD",
+          "nivel": 0.95,
+          "cuantil ajustado": 17426.215219015252,
+          "excedencias": 1,
+          "esperadas": 2.7000000000000024,
+          "p_binomial": 0.5249287381769947
+        },
+        {
+          "modelo": "Empírica + GPD",
+          "nivel": 0.99,
+          "cuantil ajustado": 94938.90621213375,
+          "excedencias": 0,
+          "esperadas": 0.5400000000000005,
+          "p_binomial": 1.0
+        }
+      ],
+      "exceso_medio": [
+        {
+          "modelo": "Lognormal",
+          "u": 2190.303881987438,
+          "exceso medio del modelo": 95762.28039949898
+        },
+        {
+          "modelo": "Empírica + GPD",
+          "u": 2190.303881987438,
+          "exceso medio del modelo": Infinity
+        },
+        {
+          "modelo": "Observado (prueba)",
+          "u": 2190.303881987438,
+          "exceso medio del modelo": 8960.62492440786
+        }
+      ]
+    }
+  }
 }
