@@ -1,19 +1,21 @@
 # Actuarial Sciences: reaseguro XL y supervivencia de siniestros con datos reales
 
 Notas de investigación y docencia sobre **reaseguro catastrófico de exceso de pérdida**, más un
-módulo reproducible de Python que lleva sus métodos a **datos reales**. Las gráficas se hacen con Altair.
+módulo reproducible de Python que lleva sus métodos a **datos reales**: incendios daneses, siniestros franceses y
+**casos mexicanos** (ciclones y sismos del CENAPRED y seguro de huracán y terremoto de la CNSF). Las gráficas se hacen con Altair.
 
 | | |
 |---|---|
 | Notas (PDF) | [`notas/Reaseguro_XL_Investigacion_Operaciones.pdf`](notas/Reaseguro_XL_Investigacion_Operaciones.pdf) |
 | Notebook de resultados | [`notebooks/Resultados.ipynb`](notebooks/Resultados.ipynb) (sólo muestra; no calcula) |
-| Módulo | [`actuarial/`](actuarial) (datos, reaseguro, supervivencia, gráficas, pipeline) |
+| Módulo | [`actuarial/`](actuarial) (datos, reaseguro, México, supervivencia, gráficas, pipeline) |
+| Datos mexicanos derivados | [`datos_mx/`](datos_mx) (extractos + `manifest.json` con URL y SHA-256 de cada fuente oficial) |
 
 ## Reproducir
 
 ```bash
 pip install -r requirements.txt
-python -m actuarial                  # todo el estudio: results/ y figures/  (~4 min en CPU)
+python -m actuarial                  # todo el estudio: results/ y figures/  (~8 min en CPU)
 python notas/optimizacion_xl.py      # ejemplo exacto de las notas (salida idéntica a la del .tex)
 jupyter lab notebooks/Resultados.ipynb
 ```
@@ -22,15 +24,20 @@ Los datos se descargan la primera vez a `data/raw/` desde un commit fijo de
 [CASdatasets](https://github.com/dutangc/CASdatasets) y se verifica su SHA-256. No se redistribuyen aquí
 porque tienen licencia GPL (≥ 2). Semilla fija: `2026`.
 
+Los datos mexicanos son datos abiertos oficiales. `python -c "from actuarial import mexico; mexico.build()"` vuelve a
+descargarlos de CENAPRED, CNSF y FRED y regenera `datos_mx/`. El análisis sólo lee esos extractos, así que corre sin red.
+
 ## Contenido
 
 ```
 notas/      Reaseguro_XL_Investigacion_Operaciones.tex/.pdf  +  optimizacion_xl.py (incluido por \lstinputlisting)
 actuarial/  data.py          descarga verificada; construye tiempos de liquidación y censura
+            mexico.py        CENAPRED + CNSF + INPC: eventos, deflactor, cola GPD truncada, capa XL, brecha de protección
             reinsurance.py   Poisson con tendencia, Pareto/lognormal/GPD, prima por capa, simulación y optimización (d, m)
             survival.py      red neuronal en tiempo discreto con censura, GLM, Kaplan–Meier, Brier IPCW, reserva descontada
             charts.py        tema Altair; renderer Vega-Lite + PNG (interactivo en Jupyter, visible en GitHub)
             pipeline.py      run_all(): ejecuta todo y escribe figures/ y results/resumen.json
+datos_mx/   extractos derivados de las fuentes mexicanas y manifest.json
 notebooks/  Resultados.ipynb
 scripts/    actuarial_survival_nn_synthetic.py   versión original con datos simulados
 ```
@@ -61,7 +68,31 @@ El ejemplo discreto, cuya escala proviene de cifras públicas de AXA y AMIS (Oti
 <img src="figures/05_costo_capa.png" width="49%"> <img src="figures/06b_frontera.png" width="49%">
 </p>
 
-## 3. Supervivencia neuronal de expedientes: incendio comercial, Francia 1992–2007
+## 3. Casos mexicanos
+
+**Daño económico por ciclones tropicales, CENAPRED 2000–2024.** Son 151 eventos con daño reportado, en pesos de 2024
+(deflactados con el INPC de la OCDE). Los mayores son Otis 2023 ($87 498 M), Stan 2005 ($46 013 M), Alex 2010 ($45 810 M),
+Karl/Matthew 2010, Ingrid/Manuel 2013, Wilma 2005 ($42 674 M) y Odile 2014 ($37 995 M).
+
+| Resultado | Valor |
+|---|---|
+| Frecuencia | 6.0 eventos con daño por año; varianza/media ≈ 3.1 (sobredispersión) |
+| Cola: GPD sobre el percentil 70 (45 excesos) | **ξ = 0.96** (IC bootstrap 95%: 0.52–1.31): media posiblemente infinita, el doble de pesada que la danesa |
+| Supuesto de truncación | pérdida máxima probable = 3 × Otis ≈ $262 500 M |
+| Capa XL óptima por ciclón (ES₀.₉₉ neto ≤ 75% del bruto) | **d ≈ $89 400 M, m ≈ $68 400 M**: una capa por encima de un evento del tamaño de Otis |
+| Sensibilidad (PML de 2× a 5× Otis; umbral en p60–p80) | d\* entre $51 300 M y $143 900 M: **la PML supuesta es la decisión que más pesa** |
+
+**Seguro y reaseguro, CNSF 2015–2025.** En 2023 el siniestro asegurado por huracán fue de **$33 044 M** y el reaseguro recuperó
+**$25 872 M (78%)**. En años ordinarios la cesión es de 0 a 50%: es la no linealidad de las capas XL, visible en datos de
+mercado. Entre 2015 y 2024, lo asegurado por huracán equivale a ~31% del daño económico estimado por CENAPRED.
+
+<p>
+<img src="figures/11_mx_dano_anual.png" width="49%"> <img src="figures/12_mx_cola_ciclones.png" width="49%">
+<img src="figures/15_mx_reaseguro_cnsf.png" width="49%"> <img src="figures/16_mx_brecha.png" width="49%">
+<img src="figures/13_mx_costo_capa.png" width="49%"> <img src="figures/17_mx_entidades.png" width="49%">
+</p>
+
+## 4. Supervivencia neuronal de expedientes: incendio comercial, Francia 1992–2007
 
 58 056 siniestros individuales con incurrido y pagado por año de desarrollo (`freclaimset3fire9207`).
 **Evento**: primer cierre anual con pagado = incurrido > 0. **Censura**: expediente abierto al cierre de 2007.
@@ -88,10 +119,17 @@ Reserva de casos de los 4 268 expedientes de prueba abiertos al cierre del año 
 * Las cifras de AXA y AMIS sólo fijan escala en el ejemplo de las notas; no se reconstruye ningún contrato.
 * `freclaimset3fire9207` es una muestra aleatorizada de un asegurador francés no identificado. La reserva descontada
   supone que el saldo de caso se paga al liquidar. Es una reserva de casos, no IBNR.
-* `datos.gob.mx` (bases de terremoto e hidrometeorológicos de la CNSF) bloquea la descarga automatizada; se proponen
-  como extensión mexicana en la sección 10 de las notas.
+* CENAPRED mide daño económico total (público y privado, asegurado o no; metodología DaLA de la CEPAL). La CNSF reporta
+  movimientos anuales de siniestros asegurados del mercado. No son la misma magnitud y su cociente es sólo indicativo.
+* La capa mexicana se calcula sobre daño nacional: se lee como la estructura de un bono catastrófico o de un programa
+  paramétrico, no como el contrato de una aseguradora. La sensibilidad a la PML y al umbral está en el notebook.
+* La "entidad" de la CNSF es la del registro estadístico de la póliza; por eso la Ciudad de México aparece segunda.
 
 ## Fuentes de datos
+
+* CENAPRED, *Base histórica de impacto socioeconómico de desastres 2000–2024*, Atlas Nacional de Riesgos. http://www.atlasnacionalderiesgos.gob.mx/archivo/descargas.html
+* CNSF, Datos Abiertos: Sistemas Estadísticos de Riesgos Hidrometeorológicos (57) y de Terremoto y Erupción Volcánica (60). https://www.cnsf.gob.mx/Transparencia/Paginas/DatosAbiertos.aspx
+* OCDE, índice de precios al consumidor de México (`MEXCPIALLMINMEI`), vía FRED. https://fred.stlouisfed.org/series/MEXCPIALLMINMEI
 
 * Dutang, C. y Charpentier, A., *CASdatasets: Insurance datasets*, v1.2-1, commit `227fb56`. https://github.com/dutangc/CASdatasets
 * Charpentier, A. (ed.), *Computational Actuarial Science with R*, CRC Press, 2014.

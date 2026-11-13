@@ -1,0 +1,26 @@
+{
+  "cenapred.xlsx": {
+    "url": "http://www.atlasnacionalderiesgos.gob.mx/descargas/Basehistorica_2000_a_2024.xlsx",
+    "sha256": "597d14be35a0c44011a9ff7e203605e43351df38c6c5cf7e68a93234081fe10d",
+    "bytes": 2132864,
+    "descargado": "2026-11-13"
+  },
+  "cnsf_hidro_siniestros.csv": {
+    "url": "https://www.cnsf.gob.mx/Transparencia/DGDI/57%20Informacion%20estadistica%20de%20Riesgos%20Hidrometeorologicos_%20Siniestros.csv",
+    "sha256": "254caf77559a91b5e2a6fa50c11efd976812d113a6b80a35767ccc4f0dd85ecb",
+    "bytes": 19314730,
+    "descargado": "2026-11-13"
+  },
+  "cnsf_terremoto_siniestros.csv": {
+    "url": "https://www.cnsf.gob.mx/Transparencia/DGDI/60%20Informacion%20estadistica%20de%20Terremoto%20y%20Erupcion%20Volcanica_%20Siniestros.csv",
+    "sha256": "b9495177d64902e66931e9ad47792741056896db17c3ea3ae8787a3db342637d",
+    "bytes": 5767377,
+    "descargado": "2026-11-13"
+  },
+  "cpi_mex.csv": {
+    "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=MEXCPIALLMINMEI",
+    "sha256": "afc67b0202566cb891f4d683e177a6ac61f9f19eb9e8d59a3862a6becb4eb34e",
+    "bytes": 21892,
+    "descargado": "2026-11-13"
+  }
+}

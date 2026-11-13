@@ -35,7 +35,8 @@ def _theme():
                  "domainColor": MUTED, "tickColor": MUTED, "labelPadding": 4},
         "axisX": {"grid": False},
         "legend": {"labelColor": INK2, "titleColor": INK2, "labelFontSize": 11,
-                   "titleFontSize": 11, "orient": "top", "symbolStrokeWidth": 2},
+                   "titleFontSize": 11, "orient": "top", "symbolStrokeWidth": 2,
+                   "labelLimit": 420},
         "line": {"strokeWidth": 2},
         "point": {"size": 64, "filled": True},
         "bar": {"cornerRadiusEnd": 4},
@@ -119,17 +120,18 @@ def annual_counts(counts: pd.DataFrame) -> alt.Chart:
         subtitle="Barras: conteos observados · línea naranja: GLM de Poisson con tendencia log-lineal"))
 
 
-def exceedance(emp: pd.DataFrame, fits: pd.DataFrame) -> alt.Chart:
+def exceedance(emp: pd.DataFrame, fits: pd.DataFrame, unit: str = "millones de DKK de 1985",
+               title: str = "Cola de la severidad: empírica contra modelos ajustados") -> alt.Chart:
     dom = list(dict.fromkeys(fits["modelo"]))
     pts = alt.Chart(emp).mark_circle(size=14, color=MUTED, opacity=.55).encode(
-        x=alt.X("x:Q", scale=alt.Scale(type="log"), title="Pérdida (millones de DKK de 1985, escala log)"),
+        x=alt.X("x:Q", scale=alt.Scale(type="log"), title=f"Pérdida ({unit}, escala log)"),
         y=alt.Y("S:Q", scale=alt.Scale(type="log"), title="P(X > x) (escala log)"),
         tooltip=[alt.Tooltip("x:Q", format=".2f"), alt.Tooltip("S:Q", format=".4f")])
     lines = alt.Chart(fits).mark_line().encode(
         x="x:Q", y="S:Q", color=alt.Color("modelo:N", scale=_color(dom), title=None),
         tooltip=["modelo:N", alt.Tooltip("x:Q", format=".2f"), alt.Tooltip("S:Q", format=".5f")])
     return (pts + lines).properties(width=W, height=H + 40, title=alt.Title(
-        "Cola de la severidad: empírica contra modelos ajustados",
+        title,
         subtitle="Puntos grises: supervivencia empírica · una cola pesada se ve como recta en log-log"))
 
 
@@ -145,12 +147,12 @@ def mean_excess(me: pd.DataFrame, u: float) -> alt.Chart:
         subtitle=f"Crecimiento aproximadamente lineal ⇒ cola tipo Pareto generalizada (umbral u = {u:g})"))
 
 
-def cost_heatmap(grid: pd.DataFrame, best: dict) -> alt.Chart:
+def cost_heatmap(grid: pd.DataFrame, best: dict, unit: str = "mDKK", title: str = "Costo esperado J(d, m) sobre la región factible") -> alt.Chart:
     feas = grid[grid["factible"]]
     heat = alt.Chart(feas).mark_rect().encode(
-        x=alt.X("d:O", title="Prioridad d (mDKK)", axis=alt.Axis(labelAngle=0, values=sorted(grid.d.unique())[::3])),
-        y=alt.Y("m:O", title="Capacidad m (mDKK)", sort="descending",
-                axis=alt.Axis(values=sorted(grid.m.unique())[::3])),
+        x=alt.X("d:O", title=f"Prioridad d ({unit})", axis=alt.Axis(labelAngle=0, format=",.0f", values=sorted(grid.d.unique())[::3])),
+        y=alt.Y("m:O", title=f"Capacidad m ({unit})", sort="descending",
+                axis=alt.Axis(format=",.0f", values=sorted(grid.m.unique())[::3])),
         color=alt.Color("J:Q", scale=alt.Scale(range=SEQ[::-1]), title="Costo J"),
         tooltip=[alt.Tooltip("d:Q"), alt.Tooltip("m:Q"), alt.Tooltip("J:Q", format=",.2f"),
                  alt.Tooltip("ES_net:Q", title="ES neto", format=",.1f")])
@@ -163,7 +165,7 @@ def cost_heatmap(grid: pd.DataFrame, best: dict) -> alt.Chart:
         x="d:O", y=alt.Y("m:O", sort="descending"),
         tooltip=[alt.Tooltip("d:Q"), alt.Tooltip("m:Q"), alt.Tooltip("J:Q", format=",.2f")])
     return (infeas + heat + star).properties(width=W, height=H + 60, title=alt.Title(
-        "Costo esperado J(d, m) sobre la región factible",
+        title,
         subtitle="Gris: viola ES₀.₉₉(pérdida neta anual) ≤ B · rombo: óptimo en la rejilla"))
 
 
@@ -182,17 +184,74 @@ def annual_distribution(sims: pd.DataFrame) -> alt.Chart:
         subtitle="Poisson compuesto; severidad empírica en el cuerpo y GPD en la cola"))
 
 
-def frontier(df: pd.DataFrame, best: dict) -> alt.Chart:
+def frontier(df: pd.DataFrame, best: dict, unit: str = "mDKK", title: str = "Frontera costo–riesgo de la capa XL") -> alt.Chart:
     line = alt.Chart(df).mark_line(color=BLUE, point=alt.OverlayMarkDef(color=BLUE, size=40)).encode(
-        x=alt.X("B:Q", title="Presupuesto de cola B = cota de ES₀.₉₉ de la pérdida neta anual (mDKK)",
+        x=alt.X("B:Q", title=f"Presupuesto de cola B = cota de ES₀.₉₉ de la pérdida neta anual ({unit})",
                 scale=alt.Scale(zero=False)),
-        y=alt.Y("costo_transferencia:Q", title="Costo esperado de transferir: J − E S (mDKK)"),
+        y=alt.Y("costo_transferencia:Q", title=f"Costo esperado de transferir: J − E S ({unit})"),
         tooltip=[alt.Tooltip("B:Q", format=",.0f"), alt.Tooltip("ratio:Q", title="B / ES bruto", format=".0%"),
                  alt.Tooltip("d:Q", title="d óptima"), alt.Tooltip("m:Q", title="m óptima"),
                  alt.Tooltip("costo_transferencia:Q", title="costo", format=",.2f")])
     return line.properties(width=W, height=H, title=alt.Title(
-        "Frontera costo–riesgo de la capa XL",
+        title,
         subtitle="Cada punto: capa (d, m) de mínimo costo que cumple el presupuesto de cola"))
+
+
+# --------------------------------------------------------------------------
+# México
+# --------------------------------------------------------------------------
+def mx_annual_damage(annual: pd.DataFrame, top: pd.DataFrame) -> alt.Chart:
+    bars = alt.Chart(annual).mark_bar(color=BLUE, width=14).encode(
+        x=alt.X("anio:O", title="Año", axis=alt.Axis(labelAngle=0, values=list(range(2000, 2025, 4)))),
+        y=alt.Y("dano:Q", title="Daño por ciclones tropicales (millones de pesos de 2024)"),
+        tooltip=[alt.Tooltip("anio:O", title="año"), alt.Tooltip("dano:Q", title="daño", format=",.0f")])
+    lab = top.groupby("anio").agg(nombre=("nombre", lambda s: " / ".join(n for n in s if isinstance(n, str) and n)),
+                                  dano=("dano_mdp_2024", "sum")).reset_index()
+    tot = annual.set_index("anio")["dano"]
+    lab["y"] = lab["anio"].map(tot)
+    text = alt.Chart(lab).mark_text(dy=-8, fontSize=11, color=INK2).encode(x="anio:O", y="y:Q", text="nombre:N")
+    return (bars + text).properties(width=W + 80, height=H, title=alt.Title(
+        "Daño económico anual por ciclones tropicales en México, 2000–2024",
+        subtitle="CENAPRED (públicos y privados, asegurados o no) · deflactado con el INPC (OCDE) a pesos de 2024"))
+
+
+def mx_insured_vs_ceded(df: pd.DataFrame) -> alt.Chart:
+    long = pd.concat([
+        pd.DataFrame({"anio": df["anio"], "serie": "Siniestro asegurado (movimiento del año)", "mdp": df["monto_siniestro"] / 1e6}),
+        pd.DataFrame({"anio": df["anio"], "serie": "Recuperado de reaseguro", "mdp": df["monto_reaseguro"] / 1e6}),
+    ])
+    dom = ["Siniestro asegurado (movimiento del año)", "Recuperado de reaseguro"]
+    return alt.Chart(long).mark_bar(cornerRadiusEnd=3).encode(
+        x=alt.X("anio:O", title="Año", axis=alt.Axis(labelAngle=0)),
+        xOffset=alt.XOffset("serie:N", sort=dom),
+        y=alt.Y("mdp:Q", title="Millones de pesos corrientes"),
+        color=alt.Color("serie:N", scale=_color(dom), sort=dom, title=None),
+        tooltip=[alt.Tooltip("anio:O", title="año"), "serie:N", alt.Tooltip("mdp:Q", format=",.1f")],
+    ).properties(width=W + 80, height=H, title=alt.Title(
+        "Seguro de huracán en México: siniestro asegurado y recuperación de reaseguro",
+        subtitle="CNSF, Sistema Estadístico de Riesgos Hidrometeorológicos · la recuperación de reaseguro se reporta desde 2021 · 2023: Otis"))
+
+
+def mx_protection_gap(df: pd.DataFrame) -> alt.Chart:
+    dom = ["Daño económico (CENAPRED)", "Siniestro asegurado (CNSF)"]
+    return alt.Chart(df).mark_line(point=alt.OverlayMarkDef(size=50)).encode(
+        x=alt.X("anio:O", title="Año", axis=alt.Axis(labelAngle=0)),
+        y=alt.Y("mdp:Q", title="Millones de pesos corrientes (escala log)", scale=alt.Scale(type="log")),
+        color=alt.Color("serie:N", scale=_color(dom), sort=dom, title=None),
+        tooltip=[alt.Tooltip("anio:O", title="año"), "serie:N", alt.Tooltip("mdp:Q", format=",.0f")],
+    ).properties(width=W, height=H, title=alt.Title(
+        "Brecha de protección: daño económico contra daño asegurado por huracán",
+        subtitle="Ciclones tropicales, 2015–2024 · escala logarítmica"))
+
+
+def mx_states(df: pd.DataFrame) -> alt.Chart:
+    d = df.assign(mdp=df["monto_siniestro"] / 1e6).sort_values("mdp", ascending=False).head(10)
+    return alt.Chart(d).mark_bar(color=BLUE, cornerRadiusEnd=4).encode(
+        y=alt.Y("entidad:N", sort="-x", title=None),
+        x=alt.X("mdp:Q", title="Siniestro asegurado por huracán 2015–2025 (millones de pesos corrientes)"),
+        tooltip=["entidad:N", alt.Tooltip("mdp:Q", format=",.0f"), alt.Tooltip("numero_siniestros:Q", format=",")],
+    ).properties(width=W, height=H, title=alt.Title(
+        "Entidades con mayor siniestralidad asegurada por huracán", subtitle="CNSF, acumulado 2015–2025 · entidad según el registro estadístico de la póliza"))
 
 
 # --------------------------------------------------------------------------

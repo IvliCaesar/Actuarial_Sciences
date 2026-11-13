@@ -37,8 +37,8 @@ def expected_shortfall(y: np.ndarray, alpha: float) -> float:
 # ---------------------------------------------------------------------------
 # Frecuencia
 # ---------------------------------------------------------------------------
-def poisson_trend(counts: pd.DataFrame) -> dict:
-    t = counts["Year"].to_numpy() - 1985.0
+def poisson_trend(counts: pd.DataFrame, center: float = 1985.0, ahead: float = 6.0) -> dict:
+    t = counts["Year"].to_numpy() - center
     n = counts["n"].to_numpy().astype(float)
 
     def nll(beta):
@@ -48,7 +48,7 @@ def poisson_trend(counts: pd.DataFrame) -> dict:
     beta = minimize(nll, x0=[np.log(n.mean()), 0.0], method="BFGS").x
     fit = np.exp(beta[0] + beta[1] * t)
     pearson = float(np.sum((n - fit) ** 2 / fit) / (len(n) - 2))
-    return {"beta": beta, "fit": fit, "lambda_next": float(np.exp(beta[0] + beta[1] * 6.0)),
+    return {"beta": beta, "fit": fit, "lambda_next": float(np.exp(beta[0] + beta[1] * ahead)),
             "growth": float(np.exp(beta[1]) - 1), "dispersion": pearson,
             "lambda_mean": float(n.mean())}
 
@@ -58,26 +58,40 @@ def poisson_trend(counts: pd.DataFrame) -> dict:
 # ---------------------------------------------------------------------------
 @dataclass
 class SplicedSeverity:
-    """Cuerpo empírico bajo u y GPD(xi, beta) para los excesos sobre u."""
+    """Cuerpo empírico bajo u y GPD(xi, beta) para los excesos sobre u.
+
+    Con ``cap`` la GPD se trunca en una pérdida máxima probable: necesario si
+    xi >= 1 (media infinita), y una hipótesis que debe declararse.
+    """
 
     body: np.ndarray
     u: float
     xi: float
     beta: float
     p_tail: float
+    cap: float | None = None
+
+    def _tail_sf(self, y: np.ndarray) -> np.ndarray:
+        sf = stats.genpareto.sf(y, self.xi, scale=self.beta)
+        if self.cap is None:
+            return sf
+        s_cap = stats.genpareto.sf(self.cap - self.u, self.xi, scale=self.beta)
+        return np.clip((sf - s_cap) / (1 - s_cap), 0, 1)
 
     def sf(self, x: np.ndarray) -> np.ndarray:
         x = np.asarray(x, dtype=float)
         body_sf = 1 - np.searchsorted(np.sort(self.body), x, side="right") / len(self.body)
         below = self.p_tail + (1 - self.p_tail) * body_sf
-        above = self.p_tail * stats.genpareto.sf(x - self.u, self.xi, scale=self.beta)
+        above = self.p_tail * self._tail_sf(np.maximum(x - self.u, 0))
         return np.where(x < self.u, below, above)
 
     def sample(self, n: int, rng: np.random.Generator) -> np.ndarray:
         tail = rng.random(n) < self.p_tail
         out = rng.choice(self.body, size=n)
         k = int(tail.sum())
-        out[tail] = self.u + stats.genpareto.rvs(self.xi, scale=self.beta, size=k, random_state=rng)
+        hi = 1.0 if self.cap is None else stats.genpareto.cdf(self.cap - self.u, self.xi, scale=self.beta)
+        q = rng.random(k) * hi
+        out[tail] = self.u + stats.genpareto.ppf(q, self.xi, scale=self.beta)
         return out
 
     def layer_premium(self, d: float, m: float, steps: int = 4000) -> float:
@@ -85,7 +99,8 @@ class SplicedSeverity:
         return float(trapezoid(self.sf(t), t))
 
 
-def fit_severity(x: np.ndarray, u: float = 10.0, n_boot: int = 300, seed: int = 2026) -> dict:
+def fit_severity(x: np.ndarray, u: float = 10.0, n_boot: int = 300, seed: int = 2026,
+                 cap: float | None = None) -> dict:
     x = np.asarray(x, dtype=float)
     xm = float(x.min())
     # Pareto de un parámetro con escala x_m = mínimo observado.
@@ -98,7 +113,7 @@ def fit_severity(x: np.ndarray, u: float = 10.0, n_boot: int = 300, seed: int = 
     rng = np.random.default_rng(seed)
     boot = np.array([stats.genpareto.fit(rng.choice(exc, len(exc)), floc=0)[0] for _ in range(n_boot)])
     spliced = SplicedSeverity(body=x[x <= u], u=u, xi=float(xi), beta=float(beta),
-                              p_tail=float(np.mean(x > u)))
+                              p_tail=float(np.mean(x > u)), cap=cap)
     return {"pareto_alpha": float(a_par), "xm": xm, "ln_mu": mu, "ln_sigma": sig,
             "xi": float(xi), "beta": float(beta), "xi_ci": np.quantile(boot, [.025, .975]).tolist(),
             "n_exceed": int(len(exc)), "spliced": spliced}

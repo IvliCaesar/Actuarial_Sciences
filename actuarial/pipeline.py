@@ -13,7 +13,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import charts, data, reinsurance, survival
+from . import charts, data, mexico, reinsurance, survival
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -44,6 +44,10 @@ def run_all(save: bool = True, n_years: int = 50_000) -> dict:
     re = reinsurance.run(danish, n_years=n_years)
     out["reaseguro"] = re
 
+    mx = mexico.run()
+    mx["sensibilidad"] = mexico.sensitivity()
+    out["mexico"] = mx
+
     fire = data.load_fire_claims()
     sv = survival.run(fire)
     out["supervivencia"] = sv
@@ -56,6 +60,16 @@ def run_all(save: bool = True, n_years: int = 50_000) -> dict:
         "05_costo_capa": charts.cost_heatmap(re["grid"], re["best"]),
         "06_perdida_anual": charts.annual_distribution(re["dist"]),
         "06b_frontera": charts.frontier(re["frontier"], re["best"]),
+        "11_mx_dano_anual": charts.mx_annual_damage(mx["annual"], mx["top"]),
+        "12_mx_cola_ciclones": charts.exceedance(mx["emp"], mx["fits"], unit="millones de pesos de 2024",
+                                                 title="Ciclones tropicales en México: cola del daño por evento"),
+        "13_mx_costo_capa": charts.cost_heatmap(mx["grid"], mx["best"], unit="mdp 2024",
+                                                title="México: costo esperado J(d, m) de una capa XL por ciclón"),
+        "14_mx_frontera": charts.frontier(mx["frontier"], mx["best"], unit="mdp 2024",
+                                          title="México: frontera costo–riesgo de la capa XL por ciclón"),
+        "15_mx_reaseguro_cnsf": charts.mx_insured_vs_ceded(mx["cnsf_huracan"]),
+        "16_mx_brecha": charts.mx_protection_gap(mx["gap"]),
+        "17_mx_entidades": charts.mx_states(mx["cnsf_entidad"]),
         "07_supervivencia_ajuste": charts.survival_fit(sv["curves"]),
         "08_supervivencia_perfiles": charts.survival_profiles(sv["profiles"]),
         "09_calibracion": charts.hazard_calibration(sv["calibration"]),
@@ -69,7 +83,8 @@ def run_all(save: bool = True, n_years: int = 50_000) -> dict:
         res = ROOT / "results"
         res.mkdir(exist_ok=True)
         (res / "notas_salida.txt").write_text(out["notas"], encoding="utf-8")
-        summary = {"reaseguro": re["summary"], "supervivencia": sv["summary"],
+        summary = {"reaseguro": re["summary"], "mexico": mx["summary"],
+                   "mexico_sensibilidad": mx["sensibilidad"].to_dict(orient="records"), "supervivencia": sv["summary"],
                    "reserva_descontada": sv["reserve"],
                    "metricas_supervivencia": sv["metrics"].to_dict(orient="records"),
                    "brier_ipcw": sv["brier"].to_dict(orient="records"),

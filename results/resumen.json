@@ -29,6 +29,108 @@
     "alpha": 0.99,
     "años_simulados": 50000
   },
+  "mexico": {
+    "eventos_ciclon": 151,
+    "periodo": "2000–2024",
+    "lambda_eventos_por_anio": 6.04,
+    "dispersion_var_media": 3.06953642384106,
+    "tendencia_anual_poisson": 0.021071981428266717,
+    "umbral_gpd_mdp2024": 1886.4266170340384,
+    "pml_truncacion_mdp2024": 262492.83732769295,
+    "gpd_xi": 0.9587316467937979,
+    "gpd_xi_ic95": [
+      0.5185684394111044,
+      1.3111963295407925
+    ],
+    "excesos": 45,
+    "dano_medio_anual_mdp2024": 22645.33345057651,
+    "evento_maximo": "Otis (2023-10-24)",
+    "evento_maximo_mdp2024": 87497.61244256432,
+    "E_S_simulada": 21375.71512676937,
+    "ES_0.99_bruta": 227919.4438961107,
+    "B": 170939.58292208303,
+    "d_opt": 89400.0,
+    "m_opt": 68400.0,
+    "prima_opt": 2332.456705025881,
+    "ES_0.99_neta_opt": 167131.66348295496,
+    "asegurado_entre_economico_2015_2024": 0.3092097927016824,
+    "cnsf_huracan_2023_siniestro_mdp": 33044.457992,
+    "cnsf_huracan_2023_reaseguro_mdp": 25871.637974
+  },
+  "mexico_sensibilidad": [
+    {
+      "PML / máximo observado": 2.0,
+      "cuantil del umbral u": 0.6,
+      "ξ": 0.7807901792991072,
+      "d*": 61300.0,
+      "m*": 50300.0,
+      "prima": 2113.8625120662773
+    },
+    {
+      "PML / máximo observado": 2.0,
+      "cuantil del umbral u": 0.7,
+      "ξ": 0.9587316467937979,
+      "d*": 51300.0,
+      "m*": 42100.0,
+      "prima": 2461.8078310617757
+    },
+    {
+      "PML / máximo observado": 2.0,
+      "cuantil del umbral u": 0.8,
+      "ξ": 1.0041241250372601,
+      "d*": 61300.0,
+      "m*": 50300.0,
+      "prima": 2344.1920587008462
+    },
+    {
+      "PML / máximo observado": 3.0,
+      "cuantil del umbral u": 0.6,
+      "ξ": 0.7807901792991072,
+      "d*": 89400.0,
+      "m*": 68400.0,
+      "prima": 2147.46978611865
+    },
+    {
+      "PML / máximo observado": 3.0,
+      "cuantil del umbral u": 0.7,
+      "ξ": 0.9587316467937979,
+      "d*": 89400.0,
+      "m*": 68400.0,
+      "prima": 2447.6144205510577
+    },
+    {
+      "PML / máximo observado": 3.0,
+      "cuantil del umbral u": 0.8,
+      "ξ": 1.0041241250372601,
+      "d*": 108300.0,
+      "m*": 68400.0,
+      "prima": 2092.111480596647
+    },
+    {
+      "PML / máximo observado": 5.0,
+      "cuantil del umbral u": 0.6,
+      "ξ": 0.7807901792991072,
+      "d*": 94600.0,
+      "m*": 81700.0,
+      "prima": 2770.3967402018757
+    },
+    {
+      "PML / máximo observado": 5.0,
+      "cuantil del umbral u": 0.7,
+      "ξ": 0.9587316467937979,
+      "d*": 143900.0,
+      "m*": 100800.0,
+      "prima": 2714.7858278858585
+    },
+    {
+      "PML / máximo observado": 5.0,
+      "cuantil del umbral u": 0.8,
+      "ξ": 1.0041241250372601,
+      "d*": 143900.0,
+      "m*": 100800.0,
+      "prima": 2871.932264118056
+    }
+  ],
   "supervivencia": {
     "n_siniestros": 58056,
     "liquidados": 54082,
